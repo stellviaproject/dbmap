@@ -1,0 +1,35 @@
+{
+  "SourceDB": {
+    "host": "localhost",
+    "Port": 5432,
+    "user": "postgres",
+    "Password": "postgres",
+    "Name": "sigies",
+    "sslmode": "disable"
+  },
+  "DestinyDB": {
+    "host": "localhost",
+    "Port": 5432,
+    "user": "postgres",
+    "Password": "postgres",
+    "Name": "sigies2",
+    "sslmode": "disable"
+  },
+  "Tables": [
+    "pkt_organization.tb_application",
+    "pkt_organization.tb_student",
+    "pkt_organization.r_career_application",
+    "pkt_organization.tb_preuniversity",
+    "pkt_encoders.nom_income_source",
+    "pkt_encoders.nom_income_source_province_assigment_type",
+    "pkt_encoders.nom_gender",
+    "pkt_encoders.r_gender_nom_gender_places_plan",
+    "pkt_encoders.nom_gender_places_plan",
+    "pkt_organization.r_places_plan_career_prosecution",
+    "pkt_organization.tb_places_plan",
+    "pkt_encoders.nom_modality",
+    "pkt_encoders.nom_career",
+    "pkt_encoders.nom_convocation",
+    "pkt_assignment.tb_prosecution"
+  ]
+}
