@@ -133,6 +133,47 @@ func (tb *TableInfo) UpdateQuery() string {
 	return tb.updateQuery
 }
 
+func (tb *TableInfo) UpSertQuery(sourceTable string) string {
+	// Obtener los nombres de las columnas
+	columnNames := []string{}
+	for _, column := range tb.Columns {
+		columnNames = append(columnNames, column.Name)
+	}
+
+	// Crear la lista de columnas
+	columns := strings.Join(columnNames, ", ")
+
+	// Determinar la clave primaria y construir la cláusula ON CONFLICT
+	primaryKeys := []string{}
+	for _, column := range tb.Columns {
+		if column.IsPrimaryKey {
+			primaryKeys = append(primaryKeys, column.Name)
+		}
+	}
+	if len(primaryKeys) == 0 {
+		return fmt.Sprintf("Error: La tabla %s.%s no tiene claves primarias definidas.", tb.Scheme, tb.Name)
+	}
+	onConflictClause := fmt.Sprintf("ON CONFLICT (%s)", strings.Join(primaryKeys, ", "))
+
+	// Construir la cláusula DO UPDATE SET
+	setClauses := []string{}
+	for _, column := range tb.Columns {
+		setClauses = append(setClauses, fmt.Sprintf("%s = EXCLUDED.%s", column.Name, column.Name))
+	}
+	setClause := strings.Join(setClauses, ", ")
+
+	// Generar la subconsulta SELECT desde la tabla fuente
+	subQuery := fmt.Sprintf("SELECT %s FROM %s", columns, sourceTable)
+
+	// Generar la consulta completa
+	query := fmt.Sprintf(
+		"INSERT INTO %s (%s) %s %s DO UPDATE SET %s;",
+		tb.TableName(), columns, subQuery, onConflictClause, setClause,
+	)
+
+	return query
+}
+
 // Método String() para TableInfo
 func (tb *TableInfo) String() string {
 	var sb strings.Builder
