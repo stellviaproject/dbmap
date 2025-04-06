@@ -26,16 +26,19 @@ func MakeSave(db *sql.DB) error {
 			return fmt.Errorf("error al escanear el nombre de la tabla: %v", err)
 		}
 
-		// Crear el nuevo nombre de la tabla
-		newTableName := fmt.Sprintf("%s_save", tableName)
+		//Si la tabla no tiene sufijo _save
+		if !strings.HasSuffix(tableName, "_save") {
+			// Crear el nuevo nombre de la tabla
+			newTableName := fmt.Sprintf("%s_save", tableName)
 
-		// Renombrar la tabla
-		_, err := db.Exec(fmt.Sprintf(`ALTER TABLE "%s"."%s" RENAME TO "%s";`, schemaName, tableName, newTableName))
-		if err != nil {
-			return fmt.Errorf("error al renombrar la tabla %s.%s a %s: %v", schemaName, tableName, newTableName, err)
+			// Renombrar la tabla
+			_, err := db.Exec(fmt.Sprintf(`ALTER TABLE "%s"."%s" RENAME TO "%s";`, schemaName, tableName, newTableName))
+			if err != nil {
+				return fmt.Errorf("error al renombrar la tabla %s.%s a %s: %v", schemaName, tableName, newTableName, err)
+			}
+
+			fmt.Printf("Tabla renombrada: %s.%s -> %s\n", schemaName, tableName, newTableName)
 		}
-
-		fmt.Printf("Tabla renombrada: %s.%s -> %s\n", schemaName, tableName, newTableName)
 	}
 
 	// Verificar errores en la iteración de las filas
@@ -176,5 +179,48 @@ func DropNotSave(db *sql.DB) error {
 	}
 
 	fmt.Println("Todas las tablas sin el sufijo '_save' han sido eliminadas.")
+	return nil
+}
+
+func CleanTables(db *sql.DB) error {
+	// Consulta para obtener los nombres de las tablas sin el sufijo "_save"
+	query := `
+        SELECT table_schema, table_name
+        FROM information_schema.tables
+        WHERE table_schema NOT IN ('information_schema', 'pg_catalog')
+        AND table_type = 'BASE TABLE'
+        AND table_name NOT LIKE '%_save';
+    `
+
+	// Ejecutar la consulta
+	rows, err := db.Query(query)
+	if err != nil {
+		return fmt.Errorf("error al ejecutar la consulta: %v", err)
+	}
+	defer rows.Close()
+
+	// Iterar sobre las tablas y limpiar los datos
+	for rows.Next() {
+		var schemaName, tableName string
+		if err := rows.Scan(&schemaName, &tableName); err != nil {
+			return fmt.Errorf("error al escanear los resultados: %v", err)
+		}
+
+		// Construir la consulta DELETE para limpiar la tabla
+		fullTableName := fmt.Sprintf(`"%s"."%s"`, schemaName, tableName)
+		deleteQuery := fmt.Sprintf("DELETE FROM %s;", fullTableName)
+
+		fmt.Printf("Limpiando datos de la tabla: %s\n", fullTableName)
+		if _, err := db.Exec(deleteQuery); err != nil {
+			return fmt.Errorf("error limpiando la tabla %s: %v", fullTableName, err)
+		}
+	}
+
+	// Verificar errores durante la iteración
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("error durante la iteración de las tablas: %v", err)
+	}
+
+	fmt.Println("Todas las tablas sin sufijo '_save' han sido limpiadas.")
 	return nil
 }
