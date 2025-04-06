@@ -133,7 +133,7 @@ func (tb *TableInfo) UpdateQuery() string {
 	return tb.updateQuery
 }
 
-func (tb *TableInfo) UpSertQuery(sourceTable string) string {
+func (tb *TableInfo) UpSertQuery(destinyTable string) string {
 	// Obtener los nombres de las columnas
 	columnNames := []string{}
 	for _, column := range tb.Columns {
@@ -163,12 +163,12 @@ func (tb *TableInfo) UpSertQuery(sourceTable string) string {
 	setClause := strings.Join(setClauses, ", ")
 
 	// Generar la subconsulta SELECT desde la tabla fuente
-	subQuery := fmt.Sprintf("SELECT %s FROM %s", columns, sourceTable)
+	subQuery := fmt.Sprintf("SELECT %s FROM %s", columns, tb.TableName())
 
 	// Generar la consulta completa
 	query := fmt.Sprintf(
 		"INSERT INTO %s (%s) %s %s DO UPDATE SET %s;",
-		tb.TableName(), columns, subQuery, onConflictClause, setClause,
+		destinyTable, columns, subQuery, onConflictClause, setClause,
 	)
 
 	return query
